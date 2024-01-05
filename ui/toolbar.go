@@ -7,6 +7,7 @@ import (
 var toolbarIdentifiers = []appkit.ToolbarItemIdentifier{
 	appkit.ToolbarToggleSidebarItemIdentifier,
 	appkit.ToolbarSidebarTrackingSeparatorItemIdentifier,
+	appkit.ToolbarShowFontsItemIdentifier,
 	appkit.ToolbarShowColorsItemIdentifier,
 }
 

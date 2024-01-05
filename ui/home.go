@@ -33,15 +33,13 @@ type HomeWindow struct {
 func ActiveHomeWindow(app appkit.Application) {
 	w := &HomeWindow{
 		app: app,
-		Window: appkit.NewWindowWithContentRectStyleMaskBackingDefer(
-			utility.RectOf(homeWindowFrame),
+		Window: appkit.NewWindowWithSizeAndStyle(
+			homeWindowFrame.Width, homeWindowFrame.Height,
 			appkit.WindowStyleMaskTitled|
 				appkit.WindowStyleMaskClosable|
 				appkit.WindowStyleMaskMiniaturizable|
 				appkit.WindowStyleMaskResizable|
 				appkit.WindowStyleMaskFullSizeContentView,
-			appkit.BackingStoreBuffered,
-			false,
 		),
 	}
 	objc.Retain(w)
@@ -51,13 +49,17 @@ func ActiveHomeWindow(app appkit.Application) {
 	delegate := new(appkit.SplitViewDelegate)
 	delegate.SetSplitViewConstrainMinCoordinateOfSubviewAt(func(splitView appkit.SplitView, proposedMinimumPosition float64, dividerIndex int) float64 {
 		fmt.Println(splitView, proposedMinimumPosition, dividerIndex)
-		return 500
+		return 1
 	})
 	delegate.SetSplitViewResizeSubviewsWithOldSize(func(splitView appkit.SplitView, oldSize foundation.Size) {
 		fmt.Println(splitView, oldSize)
 	})
+	delegate.SetSplitViewWillResizeSubviews(func(notification foundation.Notification) {
+		fmt.Println("SetSplitViewWillResizeSubviews")
+	})
 	splitView := appkit.NewSplitView()
 	splitView.SetDelegate(delegate)
+	//splitView.SetDelegateObject(getSplitViewDelegate())
 	splitView.SetVertical(true)
 	controller := appkit.NewSplitViewController()
 	controller.SetSplitView(splitView)
@@ -71,6 +73,26 @@ func ActiveHomeWindow(app appkit.Application) {
 	w.SetTitlebarSeparatorStyle(appkit.TitlebarSeparatorStyleLine)
 	w.SetTitlebarAppearsTransparent(false)
 	w.SetContentViewController(controller)
-	w.SetContentSize(utility.SizeOf(800, 600))
+	//w.SetContentSize(utility.SizeOf(800, 600))
 	w.MakeKeyAndOrderFront(nil)
+}
+
+type SplitViewDelegate struct {
+	appkit.SplitViewDelegateObject `objc:"NSSplitViewDelegate"`
+}
+
+func (s SplitViewDelegate) SplitViewResizeSubviewsWithOldSize(splitView appkit.SplitView, oldSize foundation.Size) {
+	fmt.Println(splitView, oldSize)
+}
+
+func (s SplitViewDelegate) HasSplitViewResizeSubviewsWithOldSize() bool {
+	return true
+}
+
+func getSplitViewDelegate() SplitViewDelegate {
+	class := objc.NewClass[SplitViewDelegate](
+		objc.Sel("splitView:resizeSubviewsWithOldSize:"),
+	)
+	objc.RegisterClass(class)
+	return class.New()
 }

@@ -1,6 +1,11 @@
 package utility
 
-import "github.com/progrium/macdriver/macos/foundation"
+import (
+	"github.com/progrium/macdriver/macos/foundation"
+	"math"
+)
+
+const Infinity = math.MaxFloat64
 
 func RectOf(size foundation.Size) foundation.Rect {
 	return foundation.Rect{Size: size}
