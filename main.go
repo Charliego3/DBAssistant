@@ -1,14 +1,24 @@
 package main
 
 import (
-	"DataHarbor/ui"
+	"embed"
+	"runtime"
+
 	"github.com/progrium/macdriver/macos/appkit"
 	"github.com/progrium/macdriver/macos/foundation"
 	"github.com/progrium/macdriver/objc"
-	"runtime"
 )
 
-var Version string
+var (
+	// Version application version string
+	Version string
+
+	// Released is release version
+	Released bool
+
+	//go:embed assets
+	assetsFS embed.FS
+)
 
 func main() {
 	if Version == "" {
@@ -19,8 +29,7 @@ func main() {
 	app := appkit.Application_SharedApplication()
 	delegate := &appkit.ApplicationDelegate{}
 	delegate.SetApplicationDidFinishLaunching(func(foundation.Notification) {
-		//ui.ActiveWelcomeWindow(app)
-		ui.ActiveHomeWindow(app)
+		ActiveHomeWindow(app)
 		app.SetActivationPolicy(appkit.ApplicationActivationPolicyRegular)
 		app.ActivateIgnoringOtherApps(true)
 	})
@@ -40,20 +49,20 @@ func setMainMenu(app appkit.Application) {
 
 	mainMenuItem := appkit.NewMenuItemWithSelector("", "", objc.Selector{})
 	mainMenuMenu := appkit.NewMenuWithTitle("App")
-	mainMenuMenu.AddItem(appkit.NewMenuItemWithAction("Hide", "h", func(_ objc.Object) { app.Hide(nil) }))
-	mainMenuMenu.AddItem(appkit.NewMenuItemWithAction("Quit", "q", func(_ objc.Object) { app.Terminate(nil) }))
+	mainMenuMenu.AddItem(appkit.NewMenuItemWithAction("Hide DataForge", "h", func(_ objc.Object) { app.Hide(nil) }))
+	mainMenuMenu.AddItem(appkit.NewMenuItemWithAction("Quit DataForge", "q", func(_ objc.Object) { app.Terminate(nil) }))
 	mainMenuItem.SetSubmenu(mainMenuMenu)
 	menu.AddItem(mainMenuItem)
 
-	testMenuItem := appkit.NewMenuItemWithSelector("", "", objc.Selector{})
-	testMenu := appkit.NewMenuWithTitle("Edit")
-	testMenu.AddItem(appkit.NewMenuItemWithSelector("Select All", "a", objc.Sel("selectAll:")))
-	testMenu.AddItem(appkit.MenuItem_SeparatorItem())
-	testMenu.AddItem(appkit.NewMenuItemWithSelector("Copy", "c", objc.Sel("copy:")))
-	testMenu.AddItem(appkit.NewMenuItemWithSelector("Paste", "v", objc.Sel("paste:")))
-	testMenu.AddItem(appkit.NewMenuItemWithSelector("Cut", "x", objc.Sel("cut:")))
-	testMenu.AddItem(appkit.NewMenuItemWithSelector("Undo", "z", objc.Sel("undo:")))
-	testMenu.AddItem(appkit.NewMenuItemWithSelector("Redo", "Z", objc.Sel("redo:")))
-	testMenuItem.SetSubmenu(testMenu)
-	menu.AddItem(testMenuItem)
+	editItem := appkit.NewMenuItemWithSelector("", "", objc.Selector{})
+	editMenu := appkit.NewMenuWithTitle("Edit")
+	editMenu.AddItem(appkit.NewMenuItemWithSelector("Select All", "a", objc.Sel("selectAll:")))
+	editMenu.AddItem(appkit.MenuItem_SeparatorItem())
+	editMenu.AddItem(appkit.NewMenuItemWithSelector("Copy", "c", objc.Sel("copy:")))
+	editMenu.AddItem(appkit.NewMenuItemWithSelector("Paste", "v", objc.Sel("paste:")))
+	editMenu.AddItem(appkit.NewMenuItemWithSelector("Cut", "x", objc.Sel("cut:")))
+	editMenu.AddItem(appkit.NewMenuItemWithSelector("Undo", "z", objc.Sel("undo:")))
+	editMenu.AddItem(appkit.NewMenuItemWithSelector("Redo", "Z", objc.Sel("redo:")))
+	editItem.SetSubmenu(editMenu)
+	menu.AddItem(editItem)
 }

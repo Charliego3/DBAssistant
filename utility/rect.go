@@ -1,8 +1,9 @@
 package utility
 
 import (
-	"github.com/progrium/macdriver/macos/foundation"
 	"math"
+
+	"github.com/progrium/macdriver/macos/foundation"
 )
 
 const Infinity = math.MaxFloat64

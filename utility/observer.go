@@ -1,52 +1,49 @@
 package utility
 
 import (
-	"DataHarbor/enums"
+	"DataForge/enums"
+	"fmt"
+
 	"github.com/progrium/macdriver/dispatch"
 	"github.com/progrium/macdriver/helper/action"
 	"github.com/progrium/macdriver/macos/foundation"
 	"github.com/progrium/macdriver/objc"
-	"sync"
 )
 
 type Observer func()
 
 type ObserverObj struct {
-	obs map[foundation.NotificationName]map[string]Observer
+	obs map[foundation.NotificationName][]Observer
 }
 
 var observerObj = new(ObserverObj)
 
-func AddAppearanceObserver(name string, observer Observer) {
-	observerObj.AddAppearanceObserver(name, observer)
+func AddAppearanceObserver(observer Observer) {
+	observerObj.AddAppearanceObserver(observer)
 }
 
-func (c *ObserverObj) AddAppearanceObserver(name string, observer Observer) {
-	//dispatch.MainQueue().DispatchSync(observer)
+func (c *ObserverObj) AddAppearanceObserver(observer Observer) {
 	observer()
-	c.fillChain(enums.AppearanceChangedNotification)[name] = observer
-	sync.OnceFunc(func() {
-		startObserver(enums.AppearanceChangedNotification)
-	})()
+	if c.fill(enums.AppearanceChangedNotification, observer) {
+		c.Start(enums.AppearanceChangedNotification)
+	}
 }
 
-func (c *ObserverObj) fillChain(types foundation.NotificationName) map[string]Observer {
+func (c *ObserverObj) fill(types foundation.NotificationName, observer Observer) bool {
 	if c.obs == nil {
-		c.obs = make(map[foundation.NotificationName]map[string]Observer)
+		c.obs = make(map[foundation.NotificationName][]Observer)
 	}
 
 	chain, ok := c.obs[types]
-	if !ok {
-		chain = make(map[string]Observer)
-		c.obs[types] = chain
-	}
-	return chain
+	c.obs[types] = append(chain, observer)
+	return !ok
 }
 
-func startObserver(types foundation.NotificationName) {
+func (c *ObserverObj) Start(types foundation.NotificationName) {
 	target, selector := action.Wrap(func(objc.Object) {
 		dispatch.MainQueue().DispatchAsync(func() {
-			if chain, ok := observerObj.obs[types]; ok {
+			if chain, ok := c.obs[types]; ok {
+				fmt.Println("observer chain count", len(chain))
 				for _, f := range chain {
 					f()
 				}
