@@ -1,8 +1,7 @@
 package utility
 
 import (
-	"DataForge/enums"
-	"fmt"
+	"github.com/charliego3/assistant/enums"
 
 	"github.com/progrium/macdriver/dispatch"
 	"github.com/progrium/macdriver/helper/action"
@@ -43,7 +42,6 @@ func (c *ObserverObj) Start(types foundation.NotificationName) {
 	target, selector := action.Wrap(func(objc.Object) {
 		dispatch.MainQueue().DispatchAsync(func() {
 			if chain, ok := c.obs[types]; ok {
-				fmt.Println("observer chain count", len(chain))
 				for _, f := range chain {
 					f()
 				}

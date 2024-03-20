@@ -26,13 +26,17 @@ func main() {
 	}
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
+
+	//bundle := foundation.Bundle_MainBundle().Class()
+	//bundle.ReplaceProperty("bundleIdentifier", []objc.PropertyAttribute{
+	//	{objc.PropertyAttributeNameRetain, "com.charlie.assistant"},
+	//})
+
 	app := appkit.Application_SharedApplication()
-	delegate := &appkit.ApplicationDelegate{}
-	delegate.SetApplicationDidFinishLaunching(func(foundation.Notification) {
-		ActiveHomeWindow(app)
-		app.SetActivationPolicy(appkit.ApplicationActivationPolicyRegular)
-		app.ActivateIgnoringOtherApps(true)
-	})
+	app.SetActivationPolicy(appkit.ApplicationActivationPolicyRegular)
+	app.ActivateIgnoringOtherApps(true)
+	delegate := new(appkit.ApplicationDelegate)
+	delegate.SetApplicationDidFinishLaunching(showMainWindow)
 	delegate.SetApplicationWillFinishLaunching(func(foundation.Notification) {
 		setMainMenu(app)
 	})
@@ -49,8 +53,8 @@ func setMainMenu(app appkit.Application) {
 
 	mainMenuItem := appkit.NewMenuItemWithSelector("", "", objc.Selector{})
 	mainMenuMenu := appkit.NewMenuWithTitle("App")
-	mainMenuMenu.AddItem(appkit.NewMenuItemWithAction("Hide DataForge", "h", func(_ objc.Object) { app.Hide(nil) }))
-	mainMenuMenu.AddItem(appkit.NewMenuItemWithAction("Quit DataForge", "q", func(_ objc.Object) { app.Terminate(nil) }))
+	mainMenuMenu.AddItem(appkit.NewMenuItemWithAction("Hide DBAssistant", "h", func(_ objc.Object) { app.Hide(nil) }))
+	mainMenuMenu.AddItem(appkit.NewMenuItemWithAction("Quit DBAssistant", "q", func(_ objc.Object) { app.Terminate(nil) }))
 	mainMenuItem.SetSubmenu(mainMenuMenu)
 	menu.AddItem(mainMenuItem)
 

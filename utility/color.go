@@ -7,12 +7,16 @@ import (
 	"github.com/progrium/macdriver/macos/foundation"
 )
 
-func ColorWithAppearance(light, dark appkit.Color) appkit.Color {
+func IsDark() bool {
 	effected := appkit.Application_SharedApplication().EffectiveAppearance()
-	if effected.BestMatchFromAppearancesWithNames([]appkit.AppearanceName{
+	return effected.BestMatchFromAppearancesWithNames([]appkit.AppearanceName{
 		appkit.AppearanceNameAqua,
 		appkit.AppearanceNameDarkAqua,
-	}) == appkit.AppearanceNameDarkAqua {
+	}) == appkit.AppearanceNameDarkAqua
+}
+
+func ColorWithAppearance(light, dark appkit.Color) appkit.Color {
+	if IsDark() {
 		return dark
 	}
 	return light
@@ -33,7 +37,7 @@ func ColorHex(hex string) appkit.Color {
 	return ColorWithRGBA(
 		float64((rgb&0xFF0000)>>16),
 		float64((rgb&0x00FF00)>>8),
-		float64((rgb & 0x0000FF)),
+		float64(rgb&0x0000FF),
 		1,
 	)
 }

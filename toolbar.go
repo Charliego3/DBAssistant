@@ -1,9 +1,8 @@
 package main
 
 import (
-	"DataForge/enums"
-	"DataForge/utility"
-	"fmt"
+	"github.com/charliego3/assistant/enums"
+	"github.com/charliego3/assistant/utility"
 
 	"github.com/progrium/macdriver/helper/action"
 	"github.com/progrium/macdriver/macos/appkit"
@@ -17,7 +16,7 @@ type Toolbar struct {
 	splitViewController appkit.SplitViewController
 }
 
-func getToolbar(w appkit.Window, controller appkit.SplitViewController) *Toolbar {
+func createToolbar(w appkit.Window, controller appkit.SplitViewController) *Toolbar {
 	toolbar := new(Toolbar)
 	toolbar.w = w
 	toolbar.splitViewController = controller
@@ -31,37 +30,27 @@ func getToolbar(w appkit.Window, controller appkit.SplitViewController) *Toolbar
 
 func (t Toolbar) identifiers(appkit.Toolbar) []appkit.ToolbarItemIdentifier {
 	return []appkit.ToolbarItemIdentifier{
-		// appkit.ToolbarToggleSidebarItemIdentifier,
 		enums.ToolbarToggleSidebarIdentifier,
 		appkit.ToolbarFlexibleSpaceItemIdentifier,
 		enums.ToolbarAddConnButtonIdentifier,
 		appkit.ToolbarSidebarTrackingSeparatorItemIdentifier,
-		appkit.ToolbarShowFontsItemIdentifier,
-		appkit.ToolbarShowColorsItemIdentifier,
+		appkit.ToolbarFlexibleSpaceItemIdentifier,
+		enums.ToolbarConnectionIdentifier,
+		appkit.ToolbarFlexibleSpaceItemIdentifier,
 	}
 }
 
-func (t Toolbar) createItem(identifier appkit.ToolbarItemIdentifier, symbol string) appkit.ToolbarItem {
+func (t Toolbar) createItem(identifier appkit.ToolbarItemIdentifier, symbol string, handler action.Handler) appkit.ToolbarItem {
 	cfg := appkit.ImageSymbolConfiguration_ConfigurationWithScale(appkit.ImageSymbolScaleLarge)
 	item := appkit.NewToolbarItemWithItemIdentifier(identifier)
-	item.SetBordered(true)
-	item.SetImage(utility.SymbolImage(symbol, cfg))
+	button := appkit.NewButton()
+	button.SetImage(utility.SymbolImage(symbol, cfg))
+	button.SetButtonType(appkit.ButtonTypeMomentaryPushIn)
+	button.SetBezelStyle(appkit.BezelStyleTexturedRounded)
+	button.SetFocusRingType(appkit.FocusRingTypeNone)
+	action.Set(button, handler)
+	item.SetView(button)
 	return item
-}
-
-func (t Toolbar) removeFocusRingType() {
-	for _, item := range t.Items() {
-		if item.View().IsNil() {
-			continue
-		}
-
-		fmt.Println(item.ItemIdentifier())
-		item.View().SetFocusRingType(appkit.FocusRingTypeNone)
-		item.SetNavigational(false)
-		item.SetImage(item.Image().ImageWithSymbolConfiguration(
-			appkit.ImageSymbolConfiguration_ConfigurationWithScale(appkit.ImageSymbolScaleLarge),
-		))
-	}
 }
 
 func (t Toolbar) getToolbarDelegate() *appkit.ToolbarDelegate {
@@ -75,17 +64,30 @@ func (t Toolbar) getToolbarDelegate() *appkit.ToolbarDelegate {
 	) appkit.ToolbarItem {
 		switch identifier {
 		case enums.ToolbarToggleSidebarIdentifier:
-			item := t.createItem(identifier, "sidebar.leading")
-			action.Set(item, func(sender objc.Object) {
-				t.splitViewController.ToggleSidebar(sender)
+			return t.createItem(identifier, "sidebar.leading", func(sender objc.Object) {
+				t.splitViewController.ToggleSidebar(nil)
 			})
-			return item
 		case enums.ToolbarAddConnButtonIdentifier:
-			item := t.createItem(identifier, "plus")
-			action.Set(item, func(sender objc.Object) {
-				fmt.Println("clicked add button")
-				t.OpenNewPanelSheet()
+			return t.createItem(identifier, "plus", func(_ objc.Object) {
+				OpenNewPanelSheet(t.w)
 			})
+		case enums.ToolbarConnectionIdentifier:
+			view := appkit.NewBox()
+			view.SetBoxType(appkit.BoxCustom)
+			view.SetBorderWidth(0)
+			view.SetContentViewMargins(utility.SizeOf(0, 0))
+			view.SetCornerRadius(5)
+			view.SetFrameSize(utility.SizeOf(200, 25))
+			view.SetAutoresizingMask(appkit.ViewWidthSizable)
+			utility.AddAppearanceObserver(func() {
+				view.SetFillColor(utility.ColorWithAppearance(
+					utility.ColorHex("#EDECEC"),
+					utility.ColorHex("#ffffff").ColorWithAlphaComponent(0.05),
+				))
+			})
+			item := appkit.NewToolbarItemWithItemIdentifier(identifier)
+			item.SetView(view)
+			item.SetNavigational(true)
 			return item
 		}
 		return appkit.ToolbarItem{}
@@ -93,20 +95,16 @@ func (t Toolbar) getToolbarDelegate() *appkit.ToolbarDelegate {
 	return delegate
 }
 
-func (t Toolbar) OpenNewPanelSheet() {
+func OpenNewPanelSheet(w appkit.IWindow) {
 	panel := appkit.NewPanelWithContentRectStyleMaskBackingDefer(
-		utility.RectOf(utility.SizeOf(300, 300)),
-		appkit.WindowStyleMaskFullSizeContentView,
+		utility.RectOf(utility.SizeOf(600, 500)),
+		appkit.WindowStyleMaskFullSizeContentView|appkit.ResizableWindowMask,
 		appkit.BackingStoreBuffered,
 		false,
 	)
 
-	content := appkit.NewButtonWithTitle("Close")
-	action.Set(content, func(sender objc.Object) {
-		t.w.EndSheet(panel)
-	})
-	panel.SetContentView(content)
-	t.w.BeginSheetCompletionHandler(panel, func(returnCode appkit.ModalResponse) {
-		fmt.Println(returnCode)
-	})
+	panel.SetMinSize(panel.Frame().Size)
+	creator := NewCreator(w, panel)
+	panel.SetContentView(creator)
+	w.BeginSheetCompletionHandler(panel, creator.Handle)
 }

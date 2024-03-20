@@ -1,6 +1,6 @@
 package enums
 
-//go:generate enumer -output=sourcetype_string.go -type DataSourceType -json -values -trimprefix Fee
+//go:generate enumer -output=sourcetype_string.go -type DataSourceType -sql -json -values -trimprefix DataSourceType
 type DataSourceType uint
 
 const (
@@ -8,4 +8,6 @@ const (
 	DataSourceTypePostgre
 	DataSourceTypeRedis
 	DataSourceTypeMongo
+
+	DataSourceTypeFolder
 )

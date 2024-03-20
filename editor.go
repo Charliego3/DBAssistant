@@ -1,7 +1,7 @@
 package main
 
 import (
-	"DataForge/utility"
+	"github.com/charliego3/assistant/utility"
 	"fmt"
 	"io/fs"
 	"os"
@@ -14,8 +14,7 @@ import (
 )
 
 type Editor struct {
-	appkit.IView
-	wv webkit.WebView
+	webkit.WebView
 }
 
 func NewEditor() *Editor {
@@ -35,7 +34,7 @@ func NewEditor() *Editor {
 	wv.SetWantsLayer(true)
 	wv.Layer().SetOpaque(false)
 	wv.Layer().SetBackgroundColor(appkit.Color_ClearColor().CGColor())
-	wv.SetTranslatesAutoresizingMaskIntoConstraints(false)
+	// wv.SetTranslatesAutoresizingMaskIntoConstraints(false)
 	wv.SetCanDrawConcurrently(true)
 	wv.SetCanDrawSubviewsIntoLayer(true)
 	layout.SetMinHeight(wv, 38)
@@ -47,29 +46,29 @@ func NewEditor() *Editor {
 	webkit.LoadURL(wv, "gofs:/index.html")
 
 	var lineheight float64 = 1
-	view := appkit.NewView()
-	view.AddSubview(wv)
-	view.SetWantsLayer(true)
-	utility.AddAppearanceObserver(func() {
-		view.Layer().SetBackgroundColor(utility.ColorWithAppearance(
-			appkit.Color_WhiteColor(),
-			utility.ColorHex("#292a2f"),
-		).CGColor())
-	})
+	// view := appkit.NewView()
+	// view.AddSubview(wv)
+	// view.SetWantsLayer(true)
+	// utility.AddAppearanceObserver(func() {
+	// 	view.Layer().SetBackgroundColor(utility.ColorWithAppearance(
+	// 		appkit.Color_WhiteColor(),
+	// 		utility.ColorHex("#292a2f"),
+	// 	).CGColor())
+	// })
 
-	layout.AliginTop(wv, view)
-	layout.AliginLeading(wv, view)
-	layout.AliginTrailing(wv, view)
-	layout.PinAnchorTo(wv.BottomAnchor(), view.BottomAnchor(), -lineheight)
+	// layout.AliginTop(wv, view)
+	// layout.AliginLeading(wv, view)
+	// layout.AliginTrailing(wv, view)
+	// layout.PinAnchorTo(wv.BottomAnchor(), view.BottomAnchor(), -lineheight)
 
-	topline := utility.SeparatorLine(utility.SeparatorOption{Super: view, Height: lineheight})
-	bottomline := utility.SeparatorLine(utility.SeparatorOption{Super: view, Height: lineheight})
-	layout.PinAnchorTo(topline.TopAnchor(), view.TopAnchor(), 38)
-	layout.AliginLeading(topline, view)
-	layout.AliginTrailing(topline, view)
+	topline := utility.SeparatorLine(utility.SeparatorOption{Super: wv, Height: lineheight})
+	bottomline := utility.SeparatorLine(utility.SeparatorOption{Super: wv, Height: lineheight})
+	layout.PinAnchorTo(topline.TopAnchor(), wv.TopAnchor(), 38)
+	layout.AliginLeading(topline, wv)
+	layout.AliginTrailing(topline, wv)
 
-	layout.AliginLeading(bottomline, view)
-	layout.AliginTrailing(bottomline, view)
-	layout.AliginBottom(bottomline, view)
-	return &Editor{IView: view, wv: wv}
+	layout.AliginLeading(bottomline, wv)
+	layout.AliginTrailing(bottomline, wv)
+	layout.AliginBottom(bottomline, wv)
+	return &Editor{WebView: wv}
 }

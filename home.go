@@ -1,9 +1,12 @@
 package main
 
 import (
-	"DataForge/utility"
 	_ "embed"
 	"fmt"
+
+	"github.com/charliego3/assistant/utility"
+
+	_ "github.com/charliego3/assistant/images"
 
 	"github.com/progrium/macdriver/helper/action"
 	"github.com/progrium/macdriver/helper/layout"
@@ -108,25 +111,30 @@ func ActiveHomeWindow(app appkit.Application) {
 
 	controller := appkit.NewSplitViewController()
 	controller.AddSplitViewItem(appkit.SplitViewItem_SidebarWithViewController(w.Sidebar()))
-	controller.AddSplitViewItem(appkit.SplitViewItem_SplitViewItemWithViewController(w.Content()))
+	controller.AddSplitViewItem(appkit.SplitViewItem_SplitViewItemWithViewController(nil))
 
 	delegate := new(appkit.WindowDelegate)
-	delegate.SetWindowDidEndLiveResize(func(notification foundation.Notification) {
-		w.SetSidebarMaxWidth()
-	})
+	// delegate.SetWindowDidEndLiveResize(func(notification foundation.Notification) {
+	// 	w.SetSidebarMaxWidth()
+	// })
 
-	toolbar := getToolbar(w.Window, controller)
+	toolbar := createToolbar(w.Window, controller)
+	// utility.AddAppearanceObserver(func() {
+	// 	w.SetBackgroundColor(utility.ColorWithAppearance(
+	// 		appkit.Color_WhiteColor(),
+	// 		utility.ColorHex("#292a2f"),
+	// 	))
+	// })
 	w.Center()
 	w.SetDelegate(delegate)
 	w.SetToolbar(toolbar)
-	w.SetContentMinSize(homeWindowFrame)
+	// w.SetContentMinSize(homeWindowFrame)
 	w.SetToolbarStyle(appkit.WindowToolbarStyleUnifiedCompact)
 	w.SetTitlebarSeparatorStyle(appkit.TitlebarSeparatorStyleNone)
 	w.SetTitlebarAppearsTransparent(false)
 	w.SetContentViewController(controller)
 	w.SetContentSize(utility.SizeOf(800, 600))
 	w.MakeKeyAndOrderFront(nil)
-	toolbar.removeFocusRingType()
 }
 
 func (w *HomeWindow) SetSidebarMaxWidth() {
@@ -170,7 +178,8 @@ func (w *HomeWindow) Content() appkit.IViewController {
 
 	button := appkit.NewButtonWithTitle("title string")
 	action.Set(button, func(sender objc.Object) {
-		w.splitViewController.SplitViewItems()[1].SetCollapsed(true)
+		// w.splitViewController.SplitViewItems()[1].SetCollapsed(true)
+		w.splitViewController.ToggleSidebar(sender)
 	})
 	w.console.AddSubview(button)
 	w.splitViewController.SetSplitView(splitView)
@@ -204,18 +213,12 @@ func (w *HomeWindow) AddActionDivider() {
 	super := w.splitViewController.View()
 	super.AddSubview(view)
 
-	config := appkit.ImageSymbolConfiguration_ConfigurationWithScale(appkit.ImageSymbolScaleLarge)
-	execute := utility.SymbolButton("play.fill", config, func(sender objc.Object) {})
-	view.AddSubview(execute)
-
-	fill := utility.SymbolButton("play.slash", config, func(sender objc.Object) {})
-	view.AddSubview(fill)
-
-	toggleConsole := utility.SymbolButton("square.bottomthird.inset.filled", config, func(sender objc.Object) {
-		item := w.splitViewController.SplitViewItems()[1]
-		item.SetCollapsed(!item.IsCollapsed())
+	execute := utility.SymbolButton("play.fill", view)
+	fill := utility.SymbolButton("play.slash", view)
+	toggleConsole := utility.SymbolButton("square.bottomthird.inset.filled", view)
+	action.Set(toggleConsole, func(sender objc.Object) {
+		w.splitViewController.ToggleSidebar(sender)
 	})
-	view.AddSubview(toggleConsole)
 
 	offset := w.splitViewController.SplitView().DividerThickness()
 	thickness := w.splitViewController.SplitView().DividerThickness() - 10.5
