@@ -114,6 +114,7 @@ func (c *ContentViewController) AddTabsView(top appkit.Box) {
 	testView.Layer().SetBackgroundColor(appkit.Color_OrangeColor().ColorWithAlphaComponent(0.2).CGColor())
 	l0 := appkit.NewLabel("test View 0")
 	l0.SetTranslatesAutoresizingMaskIntoConstraints(false)
+
 	testView.AddSubview(l0)
 	layout.PinAnchorTo(l0.LeadingAnchor(), testView.LeadingAnchor(), 10)
 	layout.PinAnchorTo(l0.TrailingAnchor(), testView.TrailingAnchor(), -10)

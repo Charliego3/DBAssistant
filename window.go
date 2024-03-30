@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/charliego3/assistant/db"
 	"github.com/charliego3/assistant/utility"
 	"github.com/progrium/macdriver/macos/appkit"
 	"github.com/progrium/macdriver/macos/foundation"
@@ -25,6 +26,7 @@ func showMainWindow(_ foundation.Notification) {
 	)
 	objc.Retain(&w)
 
+	db.InitializeDB()
 	sidebarController := NewSidebarController(w)
 	controller := appkit.NewSplitViewController()
 	controller.SetSplitViewItems([]appkit.ISplitViewItem{

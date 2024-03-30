@@ -67,4 +67,6 @@ func InitializeDB() {
 		)
 		os.Exit(int(res))
 	}
+
+	InitializeConnections()
 }

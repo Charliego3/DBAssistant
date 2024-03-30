@@ -1,9 +1,8 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/charliego3/assistant/db"
+	"github.com/charliego3/assistant/images"
 	"github.com/charliego3/assistant/lib"
 	"github.com/charliego3/assistant/utility"
 	"github.com/progrium/macdriver/helper/layout"
@@ -39,7 +38,6 @@ func NewSidebarController(w appkit.IWindow) *Sidebar {
 }
 
 func (s *Sidebar) Init() {
-	db.InitializeDB()
 	s.outline = appkit.NewOutlineView()
 	s.outline.SetColumnAutoresizingStyle(appkit.TableViewSequentialColumnAutoresizingStyle)
 	s.outline.SetUsesAlternatingRowBackgroundColors(false)
@@ -74,25 +72,8 @@ func (s *Sidebar) Init() {
 
 func (s *Sidebar) setDelegate() {
 	delegate := new(appkit.OutlineViewDelegate)
-	delegate.SetOutlineViewViewForTableColumnItem(func(_ appkit.OutlineView, tableColumn appkit.TableColumn, item objc.Object) appkit.View {
-		fmt.Println("into view for table column item")
-		conn := foundation.StringFrom(item.Ptr())
-		text := appkit.NewTextField()
-		text.SetBordered(false)
-		text.SetBezelStyle(appkit.TextFieldSquareBezel)
-		text.SetEditable(false)
-		text.SetDrawsBackground(false)
-		text.SetTranslatesAutoresizingMaskIntoConstraints(false)
-		text.SetStringValue(conn.CapitalizedString())
-
-		rowView := appkit.NewTableRowView()
-		rowView.AddSubview(text)
-
-		text.LeadingAnchor().ConstraintEqualToAnchor(rowView.LeadingAnchor()).SetActive(true)
-		text.TrailingAnchor().ConstraintEqualToAnchor(rowView.TrailingAnchor()).SetActive(true)
-		text.CenterYAnchor().ConstraintEqualToAnchor(rowView.CenterYAnchor()).SetActive(true)
-		return rowView.View
-	})
+	delegate.SetOutlineViewViewForTableColumnItem(s.createColumnItem)
+	delegate.SetControlTextDidBeginEditing(func(obj foundation.Notification) {})
 	// delegate.SetOutlineViewIsGroupItem(func(outlineView appkit.OutlineView, item objc.Object) bool {
 	// 	s := foundation.StringFrom(item.Ptr())
 	// 	return s.String() == "A -- 65"
@@ -112,49 +93,61 @@ func (s *Sidebar) setDelegate() {
 func (s *Sidebar) setDatasource() {
 	datasource := new(lib.OutlineViewDatasource)
 	datasource.SetOutlineViewChildOfItem(func(outlineView appkit.OutlineView, index int, item objc.Object) objc.Object {
-		fmt.Println("into child of item")
-		defer func() {
-			fmt.Println("out child of item")
-		}()
 		if item.IsNil() {
-			return foundation.String_StringWithString(db.Conns()[index].Name).Object
+			return foundation.Number_NumberWithInt(db.TopConnection(index)).Object
 		}
 
-		conn := (*db.Connection)(item.Ptr())
-		// return objc.ObjectFrom(unsafe.Pointer(conn.Children[index]))
-		// return items[index]
-		return foundation.String_StringWithString(conn.Children[index].Name).Object
+		num := foundation.NumberFrom(item.Ptr())
+		conn := db.Connections[db.Childrens[num.IntegerValue()][index]]
+		return foundation.Number_NumberWithInt(conn.Id).Object
 	})
 	datasource.SetOutlineViewIsItemExpandable(func(outlineView appkit.OutlineView, item objc.Object) bool {
-		fmt.Println("into view is expandable")
-		defer func() {
-			fmt.Println("out view is expandable")
-		}()
+		num := foundation.NumberFrom(item.Ptr())
+		return db.FetchChildrenLength(num.IntegerValue()) > 0
+	})
+	datasource.SetOutlineViewNumberOfChildrenOfItem(func(_ appkit.OutlineView, item objc.Object) int {
 		if item.IsNil() {
-			return false
+			return db.TopConnLength()
 		}
 
-		// conn := (*db.Connection)(item.Ptr())
-		// return conn.Type == enums.DataSourceTypeFolder
-		return false
+		num := foundation.NumberFrom(item.Ptr())
+		return len(db.Childrens[num.IntegerValue()])
 	})
-	// this is test text
-	datasource.SetOutlineViewNumberOfChildrenOfItem(func(_ appkit.OutlineView, item objc.Object) int {
-		fmt.Println("into number of children of item")
-		defer func() {
-			fmt.Println("out number of children of item")
-		}()
-		// if item.IsNil() {
-		// 	return len(db.Conns())
-		// }
-
-		// conn := (*db.Connection)(item.Ptr())
-		// return len(conn.Children)
-		return len(db.Conns())
-	})
+	appkit.NewTableViewRowAction()
 	po1 := objc.WrapAsProtocol("NSOutlineViewDataSource", appkit.POutlineViewDataSource(datasource))
 	objc.SetAssociatedObject(s.outline, objc.AssociationKey("setDataSource"), po1, objc.ASSOCIATION_RETAIN)
 	objc.Call[objc.Void](s.outline, objc.Sel("setDataSource:"), po1)
+}
+
+func (s *Sidebar) createColumnItem(_ appkit.OutlineView, tableColumn appkit.TableColumn, item objc.Object) appkit.View {
+	num := foundation.NumberFrom(item.Ptr())
+	conn := db.Connections[num.IntegerValue()]
+
+	image := appkit.NewImageView()
+	image.SetTranslatesAutoresizingMaskIntoConstraints(false)
+	// image.SetImage(utility.SymbolImage("folder.fill"))
+	icon := appkit.NewImageWithData(images.RedisData)
+	icon.SetSize(utility.SizeOf(16, 16))
+	image.SetImage(icon)
+
+	text := appkit.NewTextField()
+	text.SetBordered(false)
+	text.SetBezelStyle(appkit.TextFieldSquareBezel)
+	text.SetEditable(true)
+	text.SetDrawsBackground(false)
+	text.SetTranslatesAutoresizingMaskIntoConstraints(false)
+	text.SetStringValue(conn.Name + " = " + conn.Type.String())
+
+	rowView := appkit.NewTableRowView()
+	rowView.AddSubview(image)
+	rowView.AddSubview(text)
+
+	image.LeadingAnchor().ConstraintEqualToAnchor(rowView.LeadingAnchor()).SetActive(true)
+	image.CenterYAnchor().ConstraintEqualToAnchor(rowView.CenterYAnchor()).SetActive(true)
+	text.LeadingAnchor().ConstraintEqualToAnchorConstant(image.TrailingAnchor(), 3).SetActive(true)
+	text.TrailingAnchor().ConstraintEqualToAnchor(rowView.TrailingAnchor()).SetActive(true)
+	text.CenterYAnchor().ConstraintEqualToAnchor(rowView.CenterYAnchor()).SetActive(true)
+	return rowView.View
 }
 
 func (s *Sidebar) SetSidebarMaxWidth() {
